@@ -6,27 +6,15 @@ A PHP library to optimize SVG files and generate an SVG sprite.
 
 ## Installation
 
-This library can be installed via [Composer](https://getcomposer.org/). Ensure Composer is installed on your system.
-
-### Step 1: Install the package
-Run the following command in your terminal to add this package to your project:
+Install the package using [Composer](https://getcomposer.org/):
 
 ```bash
 composer require vestaware/svg-sprite-generator
 ```
 
-### Step 2: Require Composer autoload
-In your PHP file, include Composer's autoload file:
-
-```php
-require 'vendor/autoload.php';
-```
-
 ---
 
 ## Usage
-
-The library processes multiple SVG files, optimizes them, and generates a single SVG sprite containing `<symbol>` elements.
 
 ### Example:
 ```php
@@ -39,13 +27,7 @@ $inputDir = __DIR__ . '/svgs';
 $outputFile = __DIR__ . '/sprite.svg';
 
 // Create an instance of the generator
-$generator = new SvgSpriteGenerator(
-    $inputDir,
-    $outputFile,
-    removeComments: true,
-    removeMetadata: true,
-    removeFill: true // Set to false if you want to keep the 'fill' attribute
-);
+$generator = new SvgSpriteGenerator($inputDir, $outputFile, removeFill: true);
 
 // Generate the SVG sprite
 $generator->generateSprite();
@@ -55,11 +37,11 @@ echo "SVG sprite generated at: $outputFile";
 
 ---
 
-## Options
+## Features
 
-- **`removeComments`**: Removes comments from SVG files (default: `true`).
-- **`removeMetadata`**: Removes metadata such as XML declaration and DOCTYPE (default: `true`).
-- **`removeFill`**: Removes the `fill` attribute from SVG files (default: `false`).
+- Removes unnecessary attributes like `id`, `xmlns`, and others.
+- Retains only `viewBox` and optionally `fill` attributes.
+- Removes `<g>` tags completely.
 
 ---
 
@@ -68,32 +50,14 @@ echo "SVG sprite generated at: $outputFile";
 The generated SVG sprite will look like this:
 
 ```html
-<svg xmlns="http://www.w3.org/2000/svg" style="display:none;" aria-hidden="true">
-  <symbol id="icon-add" viewBox="0 0 24 24">
-    <path d="M12 5v14m7-7H5"></path>
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none;">
+  <symbol id="icon1" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="10" />
   </symbol>
-  <symbol id="icon-remove" viewBox="0 0 24 24">
-    <path d="M5 12h14"></path>
+  <symbol id="icon2" viewBox="0 0 24 24">
+    <rect x="4" y="4" width="16" height="16" />
   </symbol>
 </svg>
-```
-
----
-
-## Advanced Usage
-
-### Specify a Version
-If you need to install a specific version of the package, use:
-
-```bash
-composer require vestaware/svg-sprite-generator:^1.0
-```
-
-### Update the Package
-To update the package to the latest version:
-
-```bash
-composer update vestaware/svg-sprite-generator
 ```
 
 ---
@@ -101,8 +65,6 @@ composer update vestaware/svg-sprite-generator
 ## License
 
 MIT License
-
-Copyright (c) [2024] [Vestaware]
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

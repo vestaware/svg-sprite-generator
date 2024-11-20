@@ -12,8 +12,6 @@ class SvgSpriteGenerator
 {
     private string $inputDirectory;
     private string $outputFile;
-    private bool $removeComments;
-    private bool $removeMetadata;
     private bool $removeFill;
 
     /**
@@ -21,21 +19,15 @@ class SvgSpriteGenerator
      *
      * @param string $inputDirectory Directory containing SVG files.
      * @param string $outputFile Output file path for the SVG sprite.
-     * @param bool $removeComments Whether to remove comments from SVG files.
-     * @param bool $removeMetadata Whether to remove metadata from SVG files.
-     * @param bool $removeFill Whether to remove 'fill' attribute from SVG symbols.
+     * @param bool $removeFill Whether to remove the 'fill' attribute from SVG symbols.
      */
     public function __construct(
         string $inputDirectory,
         string $outputFile,
-        bool $removeComments = true,
-        bool $removeMetadata = true,
         bool $removeFill = false
     ) {
         $this->inputDirectory = rtrim($inputDirectory, '/');
         $this->outputFile = $outputFile;
-        $this->removeComments = $removeComments;
-        $this->removeMetadata = $removeMetadata;
         $this->removeFill = $removeFill;
     }
 
@@ -52,7 +44,7 @@ class SvgSpriteGenerator
             throw new Exception("No SVG files found in the input directory.");
         }
 
-        $spriteContent = '<svg xmlns="http://www.w3.org/2000/svg" style="display:none;" aria-hidden="true">';
+        $spriteContent = '<svg xmlns="http://www.w3.org/2000/svg" style="display:none;">';
 
         foreach ($svgFiles as $file) {
             $spriteContent .= $this->processSvgFile($file);
@@ -74,28 +66,23 @@ class SvgSpriteGenerator
     {
         $content = file_get_contents($filePath);
 
-        if ($this->removeComments) {
-            $content = preg_replace('/<!--(.*?)-->/', '', $content);
-        }
+        // Remove <g> tags
+        $content = preg_replace('/<g[^>]*>|<\/g>/', '', $content);
 
-        if ($this->removeMetadata) {
-            $content = preg_replace('/<\?xml(.*?)\?>/', '', $content);
-            $content = preg_replace('/<!DOCTYPE(.*?)>/', '', $content);
-        }
-
+        // Extract the content inside the <svg> tag
         preg_match('/<svg[^>]*>(.*?)<\/svg>/s', $content, $matches);
-
         if (!isset($matches[1])) {
             throw new Exception("Invalid SVG format in file: $filePath");
         }
+        $contentInsideSvg = $matches[1];
 
-        $symbolId = pathinfo($filePath, PATHINFO_FILENAME);
-
-        // Extract attributes, clean unnecessary ones, and return the symbol
+        // Clean the attributes from the <svg> tag
         $attributes = $this->extractAttributes($content);
         $attributes = $this->cleanAttributes($attributes);
 
-        return '<symbol id="' . $symbolId . '" ' . $attributes . '>' . $matches[1] . '</symbol>';
+        $symbolId = pathinfo($filePath, PATHINFO_FILENAME);
+
+        return '<symbol id="' . $symbolId . '" ' . $attributes . '>' . $contentInsideSvg . '</symbol>';
     }
 
     /**
@@ -119,17 +106,21 @@ class SvgSpriteGenerator
      */
     private function cleanAttributes(string $attributes): string
     {
-        // Remove width and height
-        $attributes = preg_replace('/\s(width|height)="[^"]*"/i', '', $attributes);
-
-        // Remove xmlns (only needed on the root <svg>)
-        $attributes = preg_replace('/\sxmlns="[^"]*"/i', '', $attributes);
-
-        // Optionally remove fill attribute
-        if ($this->removeFill) {
-            $attributes = preg_replace('/\sfill="[^"]*"/i', '', $attributes);
+        // Remove everything except viewBox and fill
+        $allowedAttributes = ['viewBox'];
+        if (!$this->removeFill) {
+            $allowedAttributes[] = 'fill';
         }
 
-        return trim($attributes);
+        // Filter attributes
+        $attributesArray = [];
+        preg_match_all('/(\w+)=(".*?"|\'.*?\')/s', $attributes, $matches, PREG_SET_ORDER);
+        foreach ($matches as $match) {
+            if (in_array($match[1], $allowedAttributes)) {
+                $attributesArray[] = $match[0];
+            }
+        }
+
+        return implode(' ', $attributesArray);
     }
 }

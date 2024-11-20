@@ -21,11 +21,11 @@ class SvgSpriteGeneratorTest extends TestCase
             mkdir(dirname($outputFile), 0777, true);
         }
 
-        file_put_contents($inputDir . '/icon1.svg', '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /></svg>');
-        file_put_contents($inputDir . '/icon2.svg', '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" /></svg>');
+        file_put_contents($inputDir . '/icon1.svg', '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g><circle cx="12" cy="12" r="10" /></g></svg>');
+        file_put_contents($inputDir . '/icon2.svg', '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g><rect x="4" y="4" width="16" height="16" /></g></svg>');
 
         // Act
-        $generator = new SvgSpriteGenerator($inputDir, $outputFile, true, true, true);
+        $generator = new SvgSpriteGenerator($inputDir, $outputFile, true);
         $generator->generateSprite();
 
         // Assert
@@ -35,10 +35,8 @@ class SvgSpriteGeneratorTest extends TestCase
 
         $this->assertStringContainsString('<symbol id="icon1"', $outputContent);
         $this->assertStringContainsString('<symbol id="icon2"', $outputContent);
-        $this->assertStringNotContainsString('xmlns=', $outputContent); // xmlns should be removed
-        $this->assertStringNotContainsString('width=', $outputContent); // width should be removed
-        $this->assertStringNotContainsString('height=', $outputContent); // height should be removed
-        $this->assertStringNotContainsString('fill=', $outputContent); // fill should be removed if removeFill is true
+        $this->assertStringNotContainsString('<g>', $outputContent);
+        $this->assertStringNotContainsString('id=', $outputContent);
 
         // Cleanup
         unlink($inputDir . '/icon1.svg');
