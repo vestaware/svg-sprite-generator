@@ -6,56 +6,100 @@ A PHP library to optimize SVG files and generate an SVG sprite.
 
 ## Installation
 
-Install the package using [Composer](https://getcomposer.org/):
+This library can be installed via [Composer](https://getcomposer.org/). Ensure Composer is installed on your system.
+
+### Step 1: Install the package
+Run the following command in your terminal to add this package to your project:
 
 ```bash
 composer require vestaware/svg-sprite-generator
+```
+
+### Step 2: Require Composer autoload
+In your PHP file, include Composer's autoload file:
+
+```php
+require 'vendor/autoload.php';
 ```
 
 ---
 
 ## Usage
 
-Here is an example of how to use the library:
+The library processes multiple SVG files, optimizes them, and generates a single SVG sprite containing `<symbol>` elements.
 
+### Example:
 ```php
-<?php
-
-require 'vendor/autoload.php';
-
 use Vestaware\SvgSpriteGenerator\SvgSpriteGenerator;
 
-// Define the input directory and output file
+// Define the input directory containing SVG files
 $inputDir = __DIR__ . '/svgs';
+
+// Define the output file for the SVG sprite
 $outputFile = __DIR__ . '/sprite.svg';
 
 // Create an instance of the generator
-$generator = new SvgSpriteGenerator($inputDir, $outputFile);
+$generator = new SvgSpriteGenerator(
+    $inputDir,
+    $outputFile,
+    removeComments: true,
+    removeMetadata: true,
+    removeFill: true // Set to false if you want to keep the 'fill' attribute
+);
 
 // Generate the SVG sprite
 $generator->generateSprite();
 
-echo "SVG sprite generated successfully at: $outputFile";
+echo "SVG sprite generated at: $outputFile";
 ```
-
-- Place your SVG files in the `svgs` directory.
-- The output will be saved as `sprite.svg`.
 
 ---
 
-## Features
+## Options
 
-- Optimizes SVG files by removing comments and metadata.
-- Combines multiple SVG files into a single SVG sprite.
-- Each SVG is converted into a `<symbol>` tag for easy use in HTML.
+- **`removeComments`**: Removes comments from SVG files (default: `true`).
+- **`removeMetadata`**: Removes metadata such as XML declaration and DOCTYPE (default: `true`).
+- **`removeFill`**: Removes the `fill` attribute from SVG files (default: `false`).
+
+---
+
+## Output Example
+
+The generated SVG sprite will look like this:
+
+```html
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none;" aria-hidden="true">
+  <symbol id="icon-add" viewBox="0 0 24 24">
+    <path d="M12 5v14m7-7H5"></path>
+  </symbol>
+  <symbol id="icon-remove" viewBox="0 0 24 24">
+    <path d="M5 12h14"></path>
+  </symbol>
+</svg>
+```
+
+---
+
+## Advanced Usage
+
+### Specify a Version
+If you need to install a specific version of the package, use:
+
+```bash
+composer require vestaware/svg-sprite-generator:^1.0
+```
+
+### Update the Package
+To update the package to the latest version:
+
+```bash
+composer update vestaware/svg-sprite-generator
+```
 
 ---
 
 ## License
 
-This project is licensed under the MIT License:
-
-```
 MIT License
 
 Copyright (c) [2024] [Vestaware]
@@ -77,4 +121,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-```

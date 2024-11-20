@@ -14,6 +14,7 @@ class SvgSpriteGenerator
     private string $outputFile;
     private bool $removeComments;
     private bool $removeMetadata;
+    private bool $removeFill;
 
     /**
      * Constructor to initialize the class with user preferences.
@@ -22,13 +23,20 @@ class SvgSpriteGenerator
      * @param string $outputFile Output file path for the SVG sprite.
      * @param bool $removeComments Whether to remove comments from SVG files.
      * @param bool $removeMetadata Whether to remove metadata from SVG files.
+     * @param bool $removeFill Whether to remove 'fill' attribute from SVG symbols.
      */
-    public function __construct(string $inputDirectory, string $outputFile, bool $removeComments = true, bool $removeMetadata = true)
-    {
+    public function __construct(
+        string $inputDirectory,
+        string $outputFile,
+        bool $removeComments = true,
+        bool $removeMetadata = true,
+        bool $removeFill = false
+    ) {
         $this->inputDirectory = rtrim($inputDirectory, '/');
         $this->outputFile = $outputFile;
         $this->removeComments = $removeComments;
         $this->removeMetadata = $removeMetadata;
+        $this->removeFill = $removeFill;
     }
 
     /**
@@ -44,7 +52,7 @@ class SvgSpriteGenerator
             throw new Exception("No SVG files found in the input directory.");
         }
 
-        $spriteContent = '<svg xmlns="http://www.w3.org/2000/svg" style="display:none;">';
+        $spriteContent = '<svg xmlns="http://www.w3.org/2000/svg" style="display:none;" aria-hidden="true">';
 
         foreach ($svgFiles as $file) {
             $spriteContent .= $this->processSvgFile($file);
@@ -83,7 +91,11 @@ class SvgSpriteGenerator
 
         $symbolId = pathinfo($filePath, PATHINFO_FILENAME);
 
-        return '<symbol id="' . $symbolId . '" ' . $this->extractAttributes($content) . '>' . $matches[1] . '</symbol>';
+        // Extract attributes, clean unnecessary ones, and return the symbol
+        $attributes = $this->extractAttributes($content);
+        $attributes = $this->cleanAttributes($attributes);
+
+        return '<symbol id="' . $symbolId . '" ' . $attributes . '>' . $matches[1] . '</symbol>';
     }
 
     /**
@@ -97,5 +109,27 @@ class SvgSpriteGenerator
         preg_match('/<svg(.*?)>/s', $svgContent, $matches);
 
         return isset($matches[1]) ? trim($matches[1]) : '';
+    }
+
+    /**
+     * Clean unnecessary attributes from the extracted attributes.
+     *
+     * @param string $attributes Extracted attributes string.
+     * @return string Cleaned attributes string.
+     */
+    private function cleanAttributes(string $attributes): string
+    {
+        // Remove width and height
+        $attributes = preg_replace('/\s(width|height)="[^"]*"/i', '', $attributes);
+
+        // Remove xmlns (only needed on the root <svg>)
+        $attributes = preg_replace('/\sxmlns="[^"]*"/i', '', $attributes);
+
+        // Optionally remove fill attribute
+        if ($this->removeFill) {
+            $attributes = preg_replace('/\sfill="[^"]*"/i', '', $attributes);
+        }
+
+        return trim($attributes);
     }
 }
