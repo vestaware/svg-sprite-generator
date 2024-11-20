@@ -121,6 +121,11 @@ class SvgSpriteGenerator
             }
         }
 
+        // Ensure xmlns is removed
+        $attributesArray = array_filter($attributesArray, function ($attr) {
+            return stripos($attr, 'xmlns') === false;
+        });
+
         return implode(' ', $attributesArray);
     }
 }
