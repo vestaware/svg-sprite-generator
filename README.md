@@ -23,7 +23,7 @@ Here is an example of how to use the library:
 
 require 'vendor/autoload.php';
 
-use YourNamespace\SvgSpriteGenerator\SvgSpriteGenerator;
+use Vestaware\SvgSpriteGenerator\SvgSpriteGenerator;
 
 // Define the input directory and output file
 $inputDir = __DIR__ . '/svgs';
