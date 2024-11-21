@@ -6,33 +6,41 @@ use Exception;
 
 /**
  * Class SvgSpriteGenerator
- * A PHP library to optimize SVG files and generate SVG sprites.
+ * A PHP library to optimize SVG files and generate SVG sprites with versioning.
  */
 class SvgSpriteGenerator
 {
     private string $inputDirectory;
-    private string $outputFile;
+    private string $outputDirectory;
+    private string $baseFileName;
+    private string $manifestPath;
     private bool $removeFill;
 
     /**
      * Constructor to initialize the class with user preferences.
      *
      * @param string $inputDirectory Directory containing SVG files.
-     * @param string $outputFile Output file path for the SVG sprite.
+     * @param string $outputDirectory Directory to store the SVG sprite.
+     * @param string $baseFileName Base name for the output SVG sprite (without extension or hash).
+     * @param string $manifestPath Path to the manifest file.
      * @param bool $removeFill Whether to remove the 'fill' attribute from SVG symbols.
      */
     public function __construct(
         string $inputDirectory,
-        string $outputFile,
+        string $outputDirectory,
+        string $baseFileName,
+        string $manifestPath,
         bool $removeFill = false
     ) {
         $this->inputDirectory = rtrim($inputDirectory, '/');
-        $this->outputFile = $outputFile;
+        $this->outputDirectory = rtrim($outputDirectory, '/');
+        $this->baseFileName = $baseFileName;
+        $this->manifestPath = $manifestPath;
         $this->removeFill = $removeFill;
     }
 
     /**
-     * Generate the SVG sprite by processing files in the input directory.
+     * Generate the SVG sprite with versioning.
      *
      * @throws Exception
      */
@@ -52,7 +60,25 @@ class SvgSpriteGenerator
 
         $spriteContent .= '</svg>';
 
-        file_put_contents($this->outputFile, $spriteContent);
+        // Calculate hash of the sprite content
+        $hash = substr(md5($spriteContent), 0, 8); // Use 8 characters for the hash
+        $hashedFileName = "{$this->baseFileName}.{$hash}.min.svg";
+
+        // Full path for the output file
+        $outputPath = "{$this->outputDirectory}/$hashedFileName";
+
+        // Load existing manifest
+        $manifest = $this->loadManifest();
+
+        // Remove previous versions if any
+        $this->cleanupOldFiles($this->outputDirectory, $this->baseFileName, $hashedFileName);
+
+        // Save the sprite
+        file_put_contents($outputPath, $spriteContent);
+
+        // Update the manifest
+        $manifest[$this->baseFileName] = $hashedFileName;
+        $this->saveManifest($manifest);
     }
 
     /**
@@ -127,5 +153,45 @@ class SvgSpriteGenerator
         });
 
         return implode(' ', $attributesArray);
+    }
+
+    /**
+     * Cleanup old files with the same base name.
+     *
+     * @param string $directory Directory containing the sprite files.
+     * @param string $baseFileName Base file name for the sprite (without extension or hash).
+     * @param string $currentFileName Current file name with hash.
+     */
+    private function cleanupOldFiles(string $directory, string $baseFileName, string $currentFileName): void
+    {
+        $files = glob("$directory/{$baseFileName}.*.min.svg");
+        foreach ($files as $file) {
+            if (basename($file) !== $currentFileName) {
+                unlink($file);
+            }
+        }
+    }
+
+    /**
+     * Load the manifest file.
+     *
+     * @return array The current manifest data.
+     */
+    private function loadManifest(): array
+    {
+        if (file_exists($this->manifestPath)) {
+            return json_decode(file_get_contents($this->manifestPath), true) ?? [];
+        }
+        return [];
+    }
+
+    /**
+     * Save the manifest file.
+     *
+     * @param array $manifest The updated manifest data.
+     */
+    private function saveManifest(array $manifest): void
+    {
+        file_put_contents($this->manifestPath, json_encode($manifest, JSON_PRETTY_PRINT));
     }
 }
